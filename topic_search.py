@@ -128,11 +128,11 @@ with wcol2:
     stat_kruskal = kruskal(stat_first_samples, stat_second_samples)
     with r_col1:
         if stat_kruskal.pvalue > 0.05:
-            st.write("There is no statistically significant difference")
+            st.write("There is no statistically significant difference (p-value=5%)")
         else:
-            st.write("There is statistically significant difference")
+            st.write("There is statistically significant difference (p-value=5%)")
     with r_col2:
         st.write(f"p-value: {stat_kruskal.pvalue[0]:.5f}")
-        st.write(f"statistic: {stat_kruskal.statistic[0]:.5f}")
+        st.write(f"H statistic: {stat_kruskal.statistic[0]:.5f}")
 
 st.markdown("Copyright (C) 2023 Francesco Invernici, All Rights Reserved")
