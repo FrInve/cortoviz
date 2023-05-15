@@ -107,7 +107,7 @@ with wcol2:
     df_abs_tmp = df_abs_freq[(df_abs_freq.Topic.isin(selected_topics)) & (df_abs_freq.index < '2022-06-06')].copy()
     # Set same colour palette among different plots
     palette_colors = sns.color_palette('tab10')
-    palette_dict = {topic:color for topic,color in zip(selected_topics,palette_colors)}
+    palette_dict = {topic:color for topic,color in zip((str(x) for x in similar_topic),palette_colors)}
     fig, (ax1, ax1_bis) = plt.subplots(2,height_ratios=[0.87,0.13],figsize=(11.7,8.27))
     #sns.set_theme()
     #plt.stackplot(df_tmp.index, df_tmp.iloc[:,0] )
