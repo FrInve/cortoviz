@@ -29,6 +29,17 @@ def load_topic_data():
     df_norm = df_norm.set_index('Date')
     return df_norm
 
+@st.cache_data
+def load_topic_abs_data():
+    df_abs_freq = pd.read_parquet('./data/processed/topics.parquet')
+    df_abs_freq['Date'] = df_abs_freq.Timestamp.dt.strftime('%Y/%m/%d')
+    df_abs_freq['Date'] = pd.to_datetime(df_abs_freq['Date'])
+    df_abs_freq['Topic'] = df_abs_freq.Topic.astype(str)
+    df_abs_freq = df_abs_freq.loc[df_abs_freq.index.repeat(df_abs_freq.Frequency)]
+    df_abs_freq = df_abs_freq[['Date','Topic']]
+    df_abs_freq = df_abs_freq.set_index('Date')
+    return df_abs_freq
+
 @st.cache_resource
 def load_topic_model():
     topic_model = BERTopic.load('./models/BERTopic_full_2023-04-18',embedding_model="pritamdeka/BioBERT-mnli-snli-scinli-scitail-mednli-stsb")
@@ -42,6 +53,7 @@ def create_wordcloud_static(topic):
 df_covid_cases = load_cases_data()
 covid_timeline = load_timeline_data()
 df_norm = load_topic_data()
+df_abs_freq = load_topic_abs_data()
 topic_model = load_topic_model()
 
 st.title("CORToViz")
@@ -91,12 +103,16 @@ with wcol1:
 with wcol2:
     st.text(f"Currently showing {len(selected_topics)} topics over time")
 
-    df_tmp = df_norm[df_norm.index < '2022-06-06'][selected_topics].copy(deep=True)
-    fig, ax1 = plt.subplots(figsize=(11.7,8.27))
+    df_tmp = df_norm[df_norm.index < '2022-06-06'][selected_topics].copy()
+    df_abs_tmp = df_abs_freq[(df_abs_freq.Topic.isin(selected_topics)) & (df_abs_freq.index < '2022-06-06')].copy()
+    # Set same colour palette among different plots
+    palette_colors = sns.color_palette('tab10')
+    palette_dict = {topic:color for topic,color in zip(selected_topics,palette_colors)}
+    fig, (ax1, ax1_bis) = plt.subplots(2,height_ratios=[0.87,0.13],figsize=(11.7,8.27))
     #sns.set_theme()
     #plt.stackplot(df_tmp.index, df_tmp.iloc[:,0] )
-    sns.lineplot(data=df_tmp, dashes=False).set(title=query)
-    #sns.histplot(data=df_tmp,x=df_tmp.index).set(title=query)
+    sns.lineplot(data=df_tmp, dashes=False, palette=palette_dict, ax=ax1).set(title=query, ylabel="Relative Frequency")
+    sns.histplot(data=df_abs_tmp, multiple="stack", x="Date",hue="Topic", palette=palette_dict, legend=False).set(ylabel="Absolute Frequency")
     ax2= ax1.twinx()
     plot_events(covid_timeline[covid_timeline.Included==1][['Event']].to_dict()['Event'])
     plot_covid_cases(covid_df=df_covid_cases, ax=ax2)
@@ -107,7 +123,7 @@ with wcol2:
         value=(datetime(2020,3,1,0,0), datetime(2020,9,1,0,0)),
         format="YY/MM/DD",
         min_value=datetime(2020,1,1,0,0),
-        max_value=datetime(2022,6,17,0,0)
+        max_value=datetime(2022,6,6,0,0)
     )
     stat_first_mask = (df_tmp.index >= stat_first_date_ranges[0]) & (df_tmp.index <= stat_first_date_ranges[1])
     stat_first_samples = df_tmp[[str(stat_selected_topic)]][stat_first_mask].to_numpy(na_value=0)
@@ -118,7 +134,7 @@ with wcol2:
         value=(datetime(2021,6,1,0,0), datetime(2021,12,1,0,0)),
         format="YY/MM/DD",
         min_value=datetime(2020,1,1,0,0),
-        max_value=datetime(2022,6,17,0,0)
+        max_value=datetime(2022,6,6,0,0)
     )
     stat_second_mask = (df_tmp.index >= stat_second_date_ranges[0]) & (df_tmp.index <= stat_second_date_ranges[1])
     stat_second_samples = df_tmp[[str(stat_selected_topic)]][stat_second_mask].to_numpy(na_value=0)
