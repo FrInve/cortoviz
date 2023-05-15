@@ -108,14 +108,15 @@ with wcol2:
     # Set same colour palette among different plots
     palette_colors = sns.color_palette('tab10')
     palette_dict = {topic:color for topic,color in zip((str(x) for x in similar_topic),palette_colors)}
-    fig, (ax1, ax1_bis) = plt.subplots(2,height_ratios=[0.87,0.13],figsize=(11.7,8.27))
+    fig, (ax1, ax1_bis) = plt.subplots(2,height_ratios=[0.87,0.13],figsize=(11.7,8.27),sharex=True)
     #sns.set_theme()
     #plt.stackplot(df_tmp.index, df_tmp.iloc[:,0] )
     sns.lineplot(data=df_tmp, dashes=False, palette=palette_dict, ax=ax1).set(title=query, ylabel="Relative Frequency")
-    sns.histplot(data=df_abs_tmp, multiple="stack", x="Date",hue="Topic", palette=palette_dict, legend=False).set(ylabel="Absolute Frequency")
+    sns.histplot(data=df_abs_tmp, multiple="stack", x="Date",hue="Topic", palette=palette_dict, legend=False)
     ax2= ax1.twinx()
     plot_events(covid_timeline[covid_timeline.Included==1][['Event']].to_dict()['Event'])
     plot_covid_cases(covid_df=df_covid_cases, ax=ax2)
+    fig.subplots_adjust(hspace=0)
     st.pyplot(fig)
 
     stat_first_date_ranges = st.slider(
