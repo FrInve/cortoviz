@@ -89,7 +89,7 @@ with wcol1:
     columns = [col1,col2,col3]
 
     if 'topics' not in st.session_state:
-        st.session_state['topics'] = Topics(query, similar_topic)
+        st.session_state['topics'] = src.topics.Topics(query, similar_topic)
     else:
         st.session_state.topics.update(query, similar_topic)
     
@@ -183,7 +183,9 @@ with st.expander("Test your hypotheses", expanded=True):
             if stat_kruskal.pvalue > 0.05:
                 st.write("There is no statistically significant difference (p-value=5%)")
             else:
-                st.write("There is statistically significant difference (p-value=5%)")
+                st.write("There is statistically significant difference\\")
+
+                st.write("(p-value=5%)")
         with r_col2:
             st.write(f"p-value: {stat_kruskal.pvalue[0]:.5f}")
             st.write(f"H statistic: {stat_kruskal.statistic[0]:.5f}")
