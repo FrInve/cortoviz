@@ -10,7 +10,12 @@ import src.topics
 from datetime import datetime,timedelta
 from scipy.stats import kruskal
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide",
+                   page_title="CORToViz",
+                   page_icon="📈",
+                   menu_items={
+                       'About':"Designed and developed by Francesco Invernici, prof. Anna Bernasconi, and prof. Stefano Ceri @DEIB, Politecnico di Milano, Italy."
+                   })
 
 @st.cache_data
 def load_cases_data():
@@ -77,7 +82,7 @@ st.markdown(
                 }}
 
         </style>""".format(
-        padding_top=1, padding_bottom=1
+        padding_top=0, padding_bottom=1
     ),
     unsafe_allow_html=True,
 )
