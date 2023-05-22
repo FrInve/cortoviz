@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -23,10 +24,18 @@ def get_covid_data(start_date='2019-12-01', end_date='2022-12-30'):
     filtered_df = df.loc[mask]
     return filtered_df
 
+@ticker.FuncFormatter
+def major_formatter(x, pos):
+    return f"{x/1000000:.0f}"
+
+@ticker.FuncFormatter
+def major_formatter_perc(x,pos):
+    return f"{x*100:.1f}"
 
 def plot_covid_cases(covid_df, ax):
     line_plot = sns.lineplot(x=covid_df.index.values, y=covid_df['Global COVID-19 Cases'].values, data=covid_df, ax=ax, alpha=0.3)
     plt.fill_between(covid_df.index.values, covid_df['Global COVID-19 Cases'].values, alpha=0.1)
+    ax.yaxis.set_major_formatter(major_formatter)
     return line_plot
 
 def reduce_x_ticks(ax):
