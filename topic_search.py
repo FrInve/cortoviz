@@ -5,6 +5,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from src.visualization.timeline import *
 from src.visualization.wc import create_wordcloud
+import src.topics
 from datetime import datetime
 from scipy.stats import kruskal
 
@@ -56,6 +57,19 @@ df_norm = load_topic_data()
 df_abs_freq = load_topic_abs_data()
 topic_model = load_topic_model()
 
+st.markdown(
+    """
+        <style>
+            .appview-container .main .block-container {{
+                padding-top: {padding_top}rem;
+                padding-bottom: {padding_bottom}rem;
+                }}
+
+        </style>""".format(
+        padding_top=1, padding_bottom=1
+    ),
+    unsafe_allow_html=True,
+)
 st.title("CORToViz")
 st.header("The CORD-19 Topics Visualizer")
 
@@ -74,35 +88,37 @@ with wcol1:
     col1, col2, col3 = st.columns(3)
     columns = [col1,col2,col3]
 
-    selecting_topics = {str(topic):True for topic in similar_topic}
+    if 'topics' not in st.session_state:
+        st.session_state['topics'] = Topics(query, similar_topic)
+    else:
+        st.session_state.topics.update(query, similar_topic)
+    
+    #selecting_topics = {str(topic):True for topic in similar_topic} #######################
 
 
     for i, topic in enumerate(similar_topic):
         with columns[i%3]:
             st.text(f"{topic_model.get_topic(topic)[0][0]}")
             st.image(create_wordcloud_static(topic))
-            chosen_val = st.checkbox(str(topic),value=True)
-            selecting_topics[str(topic)] = chosen_val
-            st.text("------------------")
+            chosen_val = st.checkbox(f"Topic id: {str(topic)}",value=True)
+            #selecting_topics[str(topic)] = chosen_val ################
+            st.session_state.topics.select_topic(topic, chosen_val)
+            
+            if i < 3:
+                st.divider()
+            #st.text("------------------")
         
 
-    old_selecting_topics = selecting_topics.copy()
-    with col3:
-        stat_selected_topic = st.selectbox(
-            "Select one topic to verify if it changes through time (Kruskal-Wallis Test):",
-            similar_topic
-        )
-        if st.checkbox("Show only this topic", value=False):
-            selecting_topics = {str(topic):(True if str(topic)==str(stat_selected_topic) else False) for topic in similar_topic}
-        else:
-            selecting_topics = old_selecting_topics
-            
+    #old_selecting_topics = selecting_topics.copy() #############################
+    #if 'selected_topics' not in st.session_state:
+    #    st.session_state['selected_topics'] = [topic[0] for topic in selecting_topics.items() if topic[1]]
         
-    selected_topics = [topic[0] for topic in selecting_topics.items() if topic[1]]
 
 with wcol2:
-    df_tmp = df_norm[df_norm.index < '2022-06-06'][selected_topics].copy()
-    df_abs_tmp = df_abs_freq[(df_abs_freq.Topic.isin(selected_topics)) & (df_abs_freq.index < '2022-06-06')].copy()
+    #st.text(f"Currently showing {len(selected_topics)} topics over time")
+
+    df_tmp = df_norm[df_norm.index < '2022-06-06'][st.session_state.topics.get_selected_topics()].copy()
+    df_abs_tmp = df_abs_freq[(df_abs_freq.Topic.isin(st.session_state.topics.get_selected_topics())) & (df_abs_freq.index < '2022-06-06')].copy()
     # Set same colour palette among different plots
     palette_colors = sns.color_palette('tab10')
     palette_dict = {topic:color for topic,color in zip((str(x) for x in similar_topic),palette_colors)}
@@ -117,37 +133,60 @@ with wcol2:
     fig.subplots_adjust(hspace=0)
     st.pyplot(fig)
 
-    stat_first_date_ranges = st.slider(
-        "Select the first time interval (YY/MM/DD)",
-        value=(datetime(2020,3,1,0,0), datetime(2020,9,1,0,0)),
-        format="YY/MM/DD",
-        min_value=datetime(2020,1,1,0,0),
-        max_value=datetime(2022,6,6,0,0)
-    )
-    stat_first_mask = (df_tmp.index >= stat_first_date_ranges[0]) & (df_tmp.index <= stat_first_date_ranges[1])
-    stat_first_samples = df_tmp[[str(stat_selected_topic)]][stat_first_mask].to_numpy(na_value=0)
-    st.write(f"Number of samples: {len(stat_first_samples)}")
+def show_only_cb(selected_topic):
+    st.session_state.topics.toggle_solo(selected_topic)
 
-    stat_second_date_ranges = st.slider(
-        "Select the second time interval (YY/MM/DD)",
-        value=(datetime(2021,6,1,0,0), datetime(2021,12,1,0,0)),
-        format="YY/MM/DD",
-        min_value=datetime(2020,1,1,0,0),
-        max_value=datetime(2022,6,6,0,0)
-    )
-    stat_second_mask = (df_tmp.index >= stat_second_date_ranges[0]) & (df_tmp.index <= stat_second_date_ranges[1])
-    stat_second_samples = df_tmp[[str(stat_selected_topic)]][stat_second_mask].to_numpy(na_value=0)
-    st.write(f"Number of samples: {len(stat_second_samples)}")
+with st.expander("Test your hypotheses", expanded=True):
+    expander_col1, expander_col2 = st.columns(2)
+    with expander_col1:
+        stat_selected_topic = st.selectbox(
+            "Select one topic to verify if it changes through time (Kruskal-Wallis Test):",
+            similar_topic
+        )
+        st.checkbox("Show only this topic", value=False, on_change=show_only_cb, kwargs={'selected_topic':stat_selected_topic})
+        #if not st.checkbox("Show only this topic", value=False, on_change=show_only_cb, args=(stat_selected_topic, ):
+            #selecting_topics = {str(topic):(True if str(topic)==str(stat_selected_topic) else False) for topic in similar_topic} #######
+            #st.session_state.topics.set_solo(stat_selected_topic, False)
+        #else:
+            #st.session_state.topics.set_solo(stat_selected_topic, True)
+            #selecting_topics = old_selecting_topics #########
 
-    r_col1, r_col2 = st.columns(2)
-    stat_kruskal = kruskal(stat_first_samples, stat_second_samples)
-    with r_col1:
-        if stat_kruskal.pvalue > 0.05:
-            st.write("There is no statistically significant difference (p-value=5%)")
-        else:
-            st.write("There is statistically significant difference (p-value=5%)")
-    with r_col2:
-        st.write(f"p-value: {stat_kruskal.pvalue[0]:.5f}")
-        st.write(f"H statistic: {stat_kruskal.statistic[0]:.5f}")
+        st.text(st.session_state.topics.get_solo())
+
+        #st.session_state['selected_topics'] = [topic[0] for topic in selecting_topics.items() if topic[1]] ##########
+    with expander_col2:
+        stat_first_date_ranges = st.slider(
+            "Select the first time interval (YY/MM/DD)",
+            value=(datetime(2020,3,1,0,0), datetime(2020,9,1,0,0)),
+            format="YY/MM/DD",
+            min_value=datetime(2020,1,1,0,0),
+            max_value=datetime(2022,6,6,0,0)
+        )
+        stat_first_mask = (df_norm.index >= stat_first_date_ranges[0]) & (df_norm.index <= stat_first_date_ranges[1])
+        stat_first_samples = df_norm[[str(stat_selected_topic)]][stat_first_mask].to_numpy(na_value=0)
+        st.write(f"Number of samples: {len(stat_first_samples)}")
+
+        stat_second_date_ranges = st.slider(
+            "Select the second time interval (YY/MM/DD)",
+            value=(datetime(2021,6,1,0,0), datetime(2021,12,1,0,0)),
+            format="YY/MM/DD",
+            min_value=datetime(2020,1,1,0,0),
+            max_value=datetime(2022,6,6,0,0)
+        )
+        stat_second_mask = (df_norm.index >= stat_second_date_ranges[0]) & (df_norm.index <= stat_second_date_ranges[1])
+        stat_second_samples = df_norm[[str(stat_selected_topic)]][stat_second_mask].to_numpy(na_value=0)
+        st.write(f"Number of samples: {len(stat_second_samples)}")
+
+        r_col1, r_col2 = st.columns(2)
+        stat_kruskal = kruskal(stat_first_samples, stat_second_samples)
+        with r_col1:
+            if stat_kruskal.pvalue > 0.05:
+                st.write("There is no statistically significant difference (p-value=5%)")
+            else:
+                st.write("There is statistically significant difference (p-value=5%)")
+        with r_col2:
+            st.write(f"p-value: {stat_kruskal.pvalue[0]:.5f}")
+            st.write(f"H statistic: {stat_kruskal.statistic[0]:.5f}")
+
 
 st.markdown("Copyright (C) 2023 Francesco Invernici, All Rights Reserved")
