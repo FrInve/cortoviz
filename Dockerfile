@@ -27,4 +27,4 @@ EXPOSE 8501
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
 #ENTRYPOINT ["python","-m", "streamlit", "run", "topic_search.py", "--server.port=8501", "--server.address=0.0.0.0", "--browser.serverAddress=geco.deib.polimi.it/cortoviz","--browser.serverPort=80", "--server.enableCORS=false"]
-ENTRYPOINT ["python","-m", "streamlit", "run", "topic_search.py", "--server.enableCORS=false","--server.enableXsrfProtection=false","--server.enableWebsocketCompression=false"]
+ENTRYPOINT ["python","-m", "streamlit", "run", "topic_search.py", "--server.enableCORS=false","--server.enableXsrfProtection=false","--server.enableWebsocketCompression=true"]
