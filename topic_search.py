@@ -101,8 +101,6 @@ with wcol1:
     selected_topics = [topic[0] for topic in selecting_topics.items() if topic[1]]
 
 with wcol2:
-    st.text(f"Currently showing {len(selected_topics)} topics over time")
-
     df_tmp = df_norm[df_norm.index < '2022-06-06'][selected_topics].copy()
     df_abs_tmp = df_abs_freq[(df_abs_freq.Topic.isin(selected_topics)) & (df_abs_freq.index < '2022-06-06')].copy()
     # Set same colour palette among different plots
