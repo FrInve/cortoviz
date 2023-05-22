@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-#from scipy import integrate
 from bertopic import BERTopic
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -95,9 +94,6 @@ with wcol1:
     query = st.text_input("Search a topic:", value='variant', max_chars=100)
 
     similar_topic, similarity = topic_model.find_topics(query, top_n=6)
-    #st.text("Topic\tSimilarity")
-    #for topic, sim in zip(similar_topic, similarity):
-    #    st.text(f"{topic}\t{sim}")
 
     st.subheader("Inspect Topics' WordClouds:")
 
@@ -109,28 +105,19 @@ with wcol1:
     else:
         st.session_state.topics.update(query, similar_topic)
     
-    #selecting_topics = {str(topic):True for topic in similar_topic} #######################
-
 
     for i, topic in enumerate(similar_topic):
         with columns[i%3]:
             st.write(f"No. {i+1} - Similarity: {similarity[i]:.2f}")# - {topic_model.get_topic(topic)[0][0]}")
             st.image(create_wordcloud_static(topic))
             chosen_val = st.checkbox(f"Topic ID: {str(topic)}",value=True)
-            #selecting_topics[str(topic)] = chosen_val ################
             st.session_state.topics.select_topic(topic, chosen_val)
             
             if i < 3:
                 st.divider()
         
 
-    #old_selecting_topics = selecting_topics.copy() #############################
-    #if 'selected_topics' not in st.session_state:
-    #    st.session_state['selected_topics'] = [topic[0] for topic in selecting_topics.items() if topic[1]]
-        
-
 with wcol2:
-    #st.text(f"Currently showing {len(selected_topics)} topics over time")
     st.divider()
 
     df_tmp = df_norm[df_norm.index < '2022-06-06'][st.session_state.topics.get_selected_topics()].copy()
@@ -140,7 +127,6 @@ with wcol2:
     palette_dict = {topic:color for topic,color in zip((str(x) for x in similar_topic),palette_colors)}
     fig, (ax1, ax1_bis) = plt.subplots(2,height_ratios=[0.87,0.13],figsize=(11.7,8.27),sharex=True)
     #sns.set_theme()
-    #plt.stackplot(df_tmp.index, df_tmp.iloc[:,0] )
     sns.lineplot(data=df_tmp, dashes=False, palette=palette_dict, ax=ax1).set(title=query, ylabel="Relative Frequency (%)")
     ax1.yaxis.set_major_formatter(major_formatter_perc)
     sns.histplot(data=df_abs_tmp, multiple="stack", x="Date",hue="Topic", palette=palette_dict, binwidth=18, legend=False)
@@ -162,16 +148,7 @@ with st.expander("Test your hypotheses", expanded=True):
             similar_topic
         )
         st.checkbox("Show only this topic", value=False, on_change=show_only_cb, kwargs={'selected_topic':stat_selected_topic})
-        #if not st.checkbox("Show only this topic", value=False, on_change=show_only_cb, args=(stat_selected_topic, ):
-            #selecting_topics = {str(topic):(True if str(topic)==str(stat_selected_topic) else False) for topic in similar_topic} #######
-            #st.session_state.topics.set_solo(stat_selected_topic, False)
-        #else:
-            #st.session_state.topics.set_solo(stat_selected_topic, True)
-            #selecting_topics = old_selecting_topics #########
 
-        #st.text(st.session_state.topics.get_solo())
-
-        #st.session_state['selected_topics'] = [topic[0] for topic in selecting_topics.items() if topic[1]] ##########
     with expander_col2:
         stat_first_date_ranges = st.slider(
             "Select the first time interval (YYYY/MM/DD)",
@@ -210,6 +187,5 @@ with st.expander("Test your hypotheses", expanded=True):
         with r_col2:
             st.write(f"p-value: {stat_kruskal.pvalue[0]:.5f}")
             st.write(f"H statistic: {stat_kruskal.statistic[0]:.5f}")
-
 
 st.markdown("Copyright (C) 2023 Francesco Invernici, All Rights Reserved")
