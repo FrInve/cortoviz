@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from src.visualization.timeline import *
 from src.visualization.wc import create_wordcloud
 import src.topics
-from datetime import datetime
+from datetime import datetime,timedelta
 from scipy.stats import kruskal
 
 st.set_page_config(layout="wide")
@@ -137,7 +137,7 @@ def show_only_cb(selected_topic):
     st.session_state.topics.toggle_solo(selected_topic)
 
 with st.expander("Test your hypotheses", expanded=True):
-    expander_col1, expander_col2 = st.columns(2)
+    expander_col1, expander_col2 = st.columns(2, gap="large")
     with expander_col1:
         stat_selected_topic = st.selectbox(
             "Select one topic to verify if it changes through time (Kruskal-Wallis Test):",
@@ -156,11 +156,12 @@ with st.expander("Test your hypotheses", expanded=True):
         #st.session_state['selected_topics'] = [topic[0] for topic in selecting_topics.items() if topic[1]] ##########
     with expander_col2:
         stat_first_date_ranges = st.slider(
-            "Select the first time interval (YY/MM/DD)",
+            "Select the first time interval (YYYY/MM/DD)",
             value=(datetime(2020,3,1,0,0), datetime(2020,9,1,0,0)),
-            format="YY/MM/DD",
-            min_value=datetime(2020,1,1,0,0),
-            max_value=datetime(2022,6,6,0,0)
+            format="YYYY/MM/DD",
+            min_value=datetime(2019,9,1,0,0),
+            max_value=datetime(2022,7,31,0,0),
+            step=timedelta(days=7)
         )
         stat_first_mask = (df_norm.index >= stat_first_date_ranges[0]) & (df_norm.index <= stat_first_date_ranges[1])
         stat_first_samples = df_norm[[str(stat_selected_topic)]][stat_first_mask].to_numpy(na_value=0)
@@ -170,9 +171,10 @@ with st.expander("Test your hypotheses", expanded=True):
         stat_second_date_ranges = st.slider(
             "Select the second time interval (YY/MM/DD)",
             value=(datetime(2021,6,1,0,0), datetime(2021,12,1,0,0)),
-            format="YY/MM/DD",
-            min_value=datetime(2020,1,1,0,0),
-            max_value=datetime(2022,6,6,0,0)
+            format="YYYY/MM/DD",
+            min_value=datetime(2019,9,1,0,0),
+            max_value=datetime(2022,7,31,0,0),
+            step=timedelta(days=7)
         )
         stat_second_mask = (df_norm.index >= stat_second_date_ranges[0]) & (df_norm.index <= stat_second_date_ranges[1])
         stat_second_samples = df_norm[[str(stat_selected_topic)]][stat_second_mask].to_numpy(na_value=0)
