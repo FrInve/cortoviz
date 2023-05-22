@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+#from scipy import integrate
 from bertopic import BERTopic
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -41,6 +42,15 @@ def load_topic_abs_data():
     df_abs_freq = df_abs_freq.set_index('Date')
     return df_abs_freq
 
+@st.cache_data
+def load_topic_abs_data_aggr():
+    df_abs_freq = pd.read_parquet('./data/processed/topics.parquet')
+    df_abs_freq['Date'] = df_abs_freq.Timestamp.dt.strftime('%Y/%m/%d')
+    df_abs_freq['Date'] = pd.to_datetime(df_abs_freq['Date'])
+    df_abs_freq['Topic'] = df_abs_freq.Topic.astype(str)
+    df_abs_freq = df_abs_freq[['Topic','Frequency','Date']].pivot(index='Date',columns='Topic',values='Frequency').copy(deep=True)
+    return df_abs_freq
+
 @st.cache_resource
 def load_topic_model():
     topic_model = BERTopic.load('./models/BERTopic_full_2023-04-18',embedding_model="pritamdeka/BioBERT-mnli-snli-scinli-scitail-mednli-stsb")
@@ -55,6 +65,7 @@ df_covid_cases = load_cases_data()
 covid_timeline = load_timeline_data()
 df_norm = load_topic_data()
 df_abs_freq = load_topic_abs_data()
+df_abs_freq_aggr = load_topic_abs_data_aggr()
 topic_model = load_topic_model()
 
 st.markdown(
@@ -100,7 +111,7 @@ with wcol1:
         with columns[i%3]:
             st.write(f"No. {i+1} - Similarity: {similarity[i]:.2f}")# - {topic_model.get_topic(topic)[0][0]}")
             st.image(create_wordcloud_static(topic))
-            chosen_val = st.checkbox(f"Topic id: {str(topic)}",value=True)
+            chosen_val = st.checkbox(f"Topic ID: {str(topic)}",value=True)
             #selecting_topics[str(topic)] = chosen_val ################
             st.session_state.topics.select_topic(topic, chosen_val)
             
@@ -167,11 +178,12 @@ with st.expander("Test your hypotheses", expanded=True):
         )
         stat_first_mask = (df_norm.index >= stat_first_date_ranges[0]) & (df_norm.index <= stat_first_date_ranges[1])
         stat_first_samples = df_norm[[str(stat_selected_topic)]][stat_first_mask].to_numpy(na_value=0)
-        st.write(f"Number of bins: {len(stat_first_samples)}")
+        stat_first_samples_count = df_abs_freq_aggr[[str(stat_selected_topic)]][stat_first_mask].to_numpy(na_value=0)
+        st.write(f"Number of bins: {len(stat_first_samples)} - Number of papers: {int(sum(stat_first_samples_count)[0])}")
 
         st.divider()
         stat_second_date_ranges = st.slider(
-            "Select the second time interval (YY/MM/DD)",
+            "Select the second time interval (YYYY/MM/DD)",
             value=(datetime(2021,6,1,0,0), datetime(2021,12,1,0,0)),
             format="YYYY/MM/DD",
             min_value=datetime(2019,9,1,0,0),
@@ -180,7 +192,8 @@ with st.expander("Test your hypotheses", expanded=True):
         )
         stat_second_mask = (df_norm.index >= stat_second_date_ranges[0]) & (df_norm.index <= stat_second_date_ranges[1])
         stat_second_samples = df_norm[[str(stat_selected_topic)]][stat_second_mask].to_numpy(na_value=0)
-        st.write(f"Number of bins: {len(stat_second_samples)}")
+        stat_second_samples_count = df_abs_freq_aggr[[str(stat_selected_topic)]][stat_second_mask].to_numpy(na_value=0)
+        st.write(f"Number of bins: {len(stat_second_samples)} - Number of papers: {int(sum(stat_second_samples_count)[0])}")
 
         r_col1, r_col2 = st.columns(2)
         stat_kruskal = kruskal(stat_first_samples, stat_second_samples)
