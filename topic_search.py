@@ -112,7 +112,7 @@ with wcol2:
     #sns.set_theme()
     #plt.stackplot(df_tmp.index, df_tmp.iloc[:,0] )
     sns.lineplot(data=df_tmp, dashes=False, palette=palette_dict, ax=ax1).set(title=query, ylabel="Relative Frequency")
-    sns.histplot(data=df_abs_tmp, multiple="stack", x="Date",hue="Topic", palette=palette_dict, legend=False)
+    sns.histplot(data=df_abs_tmp, multiple="stack", x="Date",hue="Topic", palette=palette_dict, binwidth=18, legend=False)
     ax2= ax1.twinx()
     plot_events(covid_timeline[covid_timeline.Included==1][['Event']].to_dict()['Event'])
     plot_covid_cases(covid_df=df_covid_cases, ax=ax2)
