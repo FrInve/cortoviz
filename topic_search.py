@@ -98,7 +98,7 @@ with wcol1:
 
     for i, topic in enumerate(similar_topic):
         with columns[i%3]:
-            st.text(f"{topic_model.get_topic(topic)[0][0]}")
+            st.write(f"No. {i+1} - Similarity: {similarity[i]:.2f}")# - {topic_model.get_topic(topic)[0][0]}")
             st.image(create_wordcloud_static(topic))
             chosen_val = st.checkbox(f"Topic id: {str(topic)}",value=True)
             #selecting_topics[str(topic)] = chosen_val ################
@@ -106,7 +106,6 @@ with wcol1:
             
             if i < 3:
                 st.divider()
-            #st.text("------------------")
         
 
     #old_selecting_topics = selecting_topics.copy() #############################
@@ -116,6 +115,7 @@ with wcol1:
 
 with wcol2:
     #st.text(f"Currently showing {len(selected_topics)} topics over time")
+    st.divider()
 
     df_tmp = df_norm[df_norm.index < '2022-06-06'][st.session_state.topics.get_selected_topics()].copy()
     df_abs_tmp = df_abs_freq[(df_abs_freq.Topic.isin(st.session_state.topics.get_selected_topics())) & (df_abs_freq.index < '2022-06-06')].copy()
@@ -151,7 +151,7 @@ with st.expander("Test your hypotheses", expanded=True):
             #st.session_state.topics.set_solo(stat_selected_topic, True)
             #selecting_topics = old_selecting_topics #########
 
-        st.text(st.session_state.topics.get_solo())
+        #st.text(st.session_state.topics.get_solo())
 
         #st.session_state['selected_topics'] = [topic[0] for topic in selecting_topics.items() if topic[1]] ##########
     with expander_col2:
@@ -164,8 +164,9 @@ with st.expander("Test your hypotheses", expanded=True):
         )
         stat_first_mask = (df_norm.index >= stat_first_date_ranges[0]) & (df_norm.index <= stat_first_date_ranges[1])
         stat_first_samples = df_norm[[str(stat_selected_topic)]][stat_first_mask].to_numpy(na_value=0)
-        st.write(f"Number of samples: {len(stat_first_samples)}")
+        st.write(f"Number of bins: {len(stat_first_samples)}")
 
+        st.divider()
         stat_second_date_ranges = st.slider(
             "Select the second time interval (YY/MM/DD)",
             value=(datetime(2021,6,1,0,0), datetime(2021,12,1,0,0)),
@@ -175,7 +176,7 @@ with st.expander("Test your hypotheses", expanded=True):
         )
         stat_second_mask = (df_norm.index >= stat_second_date_ranges[0]) & (df_norm.index <= stat_second_date_ranges[1])
         stat_second_samples = df_norm[[str(stat_selected_topic)]][stat_second_mask].to_numpy(na_value=0)
-        st.write(f"Number of samples: {len(stat_second_samples)}")
+        st.write(f"Number of bins: {len(stat_second_samples)}")
 
         r_col1, r_col2 = st.columns(2)
         stat_kruskal = kruskal(stat_first_samples, stat_second_samples)
@@ -183,9 +184,7 @@ with st.expander("Test your hypotheses", expanded=True):
             if stat_kruskal.pvalue > 0.05:
                 st.write("There is no statistically significant difference (p-value=5%)")
             else:
-                st.write("There is statistically significant difference\\")
-
-                st.write("(p-value=5%)")
+                st.markdown("**There is statistically significant difference**  \n  (threshold: 5%)")
         with r_col2:
             st.write(f"p-value: {stat_kruskal.pvalue[0]:.5f}")
             st.write(f"H statistic: {stat_kruskal.statistic[0]:.5f}")
