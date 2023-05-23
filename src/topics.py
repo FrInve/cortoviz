@@ -8,7 +8,7 @@ class Topics:
             return False
         else:
             self.query = query
-            self.similar_topics = TopicFactory.create_topic_list(similar_topics)
+            self.similar_topics = TopicFactory.create_topic_dict(similar_topics)
         
     def any_solo(self):
         if any(t.solo for t in self.similar_topics.values()):
