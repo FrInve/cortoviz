@@ -64,6 +64,33 @@ def load_topic_model():
 def create_wordcloud_static(topic):
     return create_wordcloud(topic_model, topic).to_image()
 
+@st.cache_data
+def load_topic_data_raw():
+    df_abs_freq = pd.read_parquet('./data/processed/topics.parquet')
+    df_abs_freq['Date'] = df_abs_freq.Timestamp.dt.strftime('%Y/%m/%d')
+    df_abs_freq['Date'] = pd.to_datetime(df_abs_freq['Date'])
+    df_abs_freq['Topic'] = df_abs_freq.Topic.astype(str)
+    df_abs_freq = df_abs_freq.loc[df_abs_freq.index.repeat(df_abs_freq.Frequency)]
+    df_abs_freq = df_abs_freq[['Date','Topic']]
+    df_abs_freq = df_abs_freq.set_index('Date')
+    return [df_abs_freq]*4
+
+@st.cache_data
+def load_topic_data_pivot():
+    df_abs_freq = pd.read_parquet('./data/processed/topics.parquet')
+    df_abs_freq['Date'] = df_abs_freq.Timestamp.dt.strftime('%Y/%m/%d')
+    df_abs_freq['Date'] = pd.to_datetime(df_abs_freq['Date'])
+    df_abs_freq['Topic'] = df_abs_freq.Topic.astype(str)
+    df_abs_freq = df_abs_freq[['Topic','Frequency','Date']].pivot(index='Date',columns='Topic',values='Frequency').copy(deep=True)
+    return [df_abs_freq]*4
+
+@st.cache_data
+def load_topic_data_norm():
+    df_norm = pd.read_csv('./data/processed/topics_freq_pivoted.csv')
+    df_norm['Date'] = pd.to_datetime(df_norm['Date'])
+    df_norm = df_norm.set_index('Date')
+    return [df_norm]*4
+
 
 df_covid_cases = load_cases_data()
 covid_timeline = load_timeline_data()
@@ -71,6 +98,14 @@ df_norm = load_topic_data()
 df_abs_freq = load_topic_abs_data()
 df_abs_freq_aggr = load_topic_abs_data_aggr()
 topic_model = load_topic_model()
+
+dfs_topic = {
+    'raw':load_topic_data_raw(),
+    'pivot':load_topic_data_pivot(),
+    'norm':load_topic_data_norm(),
+    #'bins':[131,66,44,33] # This is the number of bins
+    'bins':[7,14,21,28] # This is the binwidth, or the number of days per bin
+}
 
 st.markdown(
     """
@@ -115,10 +150,22 @@ with wcol1:
             
             if i < 3:
                 st.divider()
-        
+    
+    if 'resolution' not in st.session_state:
+        st.session_state['resolution'] = 2
+
+def set_resolution(resolution):
+    st.session_state['resolution'] = resolution
 
 with wcol2:
     st.divider()
+    resolution = st.radio(label="Resolution (No. of weeks):",options=[1,2,3,4],index=1,help="Each point will aggregate data for the selected number of weeks",horizontal=True)
+    st.session_state.resolution = resolution
+    # Select the dataset with the appropriate resolution at runtime
+    df_norm = dfs_topic['norm'][resolution-1]
+    df_abs_freq = dfs_topic['raw'][resolution-1]
+    df_abs_freq_aggr = dfs_topic['pivot'][resolution-1]
+    bins = dfs_topic['bins'][resolution-1]
 
     df_tmp = df_norm[df_norm.index < '2022-06-06'][st.session_state.topics.get_selected_topics()].copy()
     df_abs_tmp = df_abs_freq[(df_abs_freq.Topic.isin(st.session_state.topics.get_selected_topics())) & (df_abs_freq.index < '2022-06-06')].copy()
@@ -129,7 +176,7 @@ with wcol2:
     #sns.set_theme()
     sns.lineplot(data=df_tmp, dashes=False, palette=palette_dict, ax=ax1).set(title=query, ylabel="Relative Frequency (%)")
     ax1.yaxis.set_major_formatter(major_formatter_perc)
-    sns.histplot(data=df_abs_tmp, multiple="stack", x="Date",hue="Topic", palette=palette_dict, binwidth=18, legend=False)
+    sns.histplot(data=df_abs_tmp, multiple="stack", x="Date",hue="Topic", palette=palette_dict, binwidth=bins, legend=False) # Default binwidth 18
     ax2= ax1.twinx()
     ax2.set_ylabel("Worldwide number of COVID-19 active cases (Millions)")
     plot_events(covid_timeline[covid_timeline.Included==1][['Event']].to_dict()['Event'])
