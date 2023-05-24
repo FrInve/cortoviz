@@ -1,13 +1,15 @@
-import streamlit as st
-import pandas as pd
-from bertopic import BERTopic
-import seaborn as sns
+from datetime import datetime, timedelta
+
 import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+import streamlit as st
+from bertopic import BERTopic
+from scipy.stats import kruskal
+
+import src.topics
 from src.visualization.timeline import *
 from src.visualization.wc import create_wordcloud
-import src.topics
-from datetime import datetime,timedelta
-from scipy.stats import kruskal
 
 st.set_page_config(layout="wide",
                    page_title="CORToViz",
@@ -66,17 +68,6 @@ def create_wordcloud_static(topic):
 
 @st.cache_data
 def load_topic_data_raw():
-    """
-    # Placeholder code
-    df_abs_freq = pd.read_parquet('./data/processed/topics.parquet')
-    df_abs_freq['Date'] = df_abs_freq.Timestamp.dt.strftime('%Y/%m/%d')
-    df_abs_freq['Date'] = pd.to_datetime(df_abs_freq['Date'])
-    df_abs_freq['Topic'] = df_abs_freq.Topic.astype(str)
-    df_abs_freq = df_abs_freq.loc[df_abs_freq.index.repeat(df_abs_freq.Frequency)]
-    df_abs_freq = df_abs_freq[['Date','Topic']]
-    df_abs_freq = df_abs_freq.set_index('Date')
-    return [df_abs_freq]*4
-    """
     paths = [
         './data/processed/cortoviz_data/131_dyn_raw.csv',
         './data/processed/cortoviz_data/66_dyn_raw.csv',
@@ -98,15 +89,6 @@ def load_topic_data_raw():
 
 @st.cache_data
 def load_topic_data_pivot():
-    """
-    # Placeholder code
-    df_abs_freq = pd.read_parquet('./data/processed/topics.parquet')
-    df_abs_freq['Date'] = df_abs_freq.Timestamp.dt.strftime('%Y/%m/%d')
-    df_abs_freq['Date'] = pd.to_datetime(df_abs_freq['Date'])
-    df_abs_freq['Topic'] = df_abs_freq.Topic.astype(str)
-    df_abs_freq = df_abs_freq[['Topic','Frequency','Date']].pivot(index='Date',columns='Topic',values='Frequency').copy(deep=True)
-    return [df_abs_freq]*4
-    """
     paths = [
         './data/processed/cortoviz_data/131_dyn_pivot.parquet',
         './data/processed/cortoviz_data/66_dyn_pivot.parquet',
@@ -117,13 +99,6 @@ def load_topic_data_pivot():
 
 @st.cache_data
 def load_topic_data_norm():
-    """
-    # Placeholder code
-    df_norm = pd.read_csv('./data/processed/topics_freq_pivoted.csv')
-    df_norm['Date'] = pd.to_datetime(df_norm['Date'])
-    df_norm = df_norm.set_index('Date')
-    return [df_norm]*4
-    """
     paths = [
         './data/processed/cortoviz_data/131_dyn_pivot_norm.parquet',
         './data/processed/cortoviz_data/66_dyn_pivot_norm.parquet',
@@ -205,7 +180,7 @@ def set_resolution(resolution):
 
 with wcol2:
     st.divider()
-    resolution = st.radio(label="Resolution (No. of weeks):",options=[1,2,3,4],index=1,help="Each point represents the number of papers on a topic that were published in the selected number of weeks",horizontal=True)
+    resolution = st.radio(label="Resolution (No. of weeks):",options=[1,2,3,4],index=1,help="Each point represents the number of abstracts regarding a topic that were published in the selected number of weeks",horizontal=True)
     st.session_state.resolution = resolution
     # Select the dataset with the appropriate resolution at runtime
     df_norm = dfs_topic['norm'][resolution-1]
@@ -254,7 +229,7 @@ with st.expander("Test your hypotheses", expanded=True):
         stat_first_mask = (df_norm.index >= stat_first_date_ranges[0]) & (df_norm.index <= stat_first_date_ranges[1])
         stat_first_samples = df_norm[[str(stat_selected_topic)]][stat_first_mask].to_numpy(na_value=0)
         stat_first_samples_count = df_abs_freq_aggr[[str(stat_selected_topic)]][stat_first_mask].to_numpy(na_value=0)
-        st.write(f"Number of bins: {len(stat_first_samples)} - Number of papers: {int(sum(stat_first_samples_count)[0])}")
+        st.write(f"Number of bins: {len(stat_first_samples)} - Number of considered abstracts: {int(sum(stat_first_samples_count)[0])}")
 
         st.divider()
         stat_second_date_ranges = st.slider(
@@ -268,17 +243,19 @@ with st.expander("Test your hypotheses", expanded=True):
         stat_second_mask = (df_norm.index >= stat_second_date_ranges[0]) & (df_norm.index <= stat_second_date_ranges[1])
         stat_second_samples = df_norm[[str(stat_selected_topic)]][stat_second_mask].to_numpy(na_value=0)
         stat_second_samples_count = df_abs_freq_aggr[[str(stat_selected_topic)]][stat_second_mask].to_numpy(na_value=0)
-        st.write(f"Number of bins: {len(stat_second_samples)} - Number of papers: {int(sum(stat_second_samples_count)[0])}")
+        st.write(f"Number of bins: {len(stat_second_samples)} - Number of considered abstracts: {int(sum(stat_second_samples_count)[0])}")
 
+        st.divider()
         r_col1, r_col2 = st.columns(2)
         stat_kruskal = kruskal(stat_first_samples, stat_second_samples)
         with r_col1:
             if stat_kruskal.pvalue > 0.05:
-                st.write("There is no statistically significant difference (p-value=5%)")
+                st.markdown(f"The observations of topic {stat_selected_topic} in an interval from {stat_first_date_ranges[0].strftime('%Y-%m-%d')} to {stat_first_date_ranges[1].strftime('%Y-%m-%d')} are **NOT** statistically different from the observations of the interval from {stat_second_date_ranges[0].strftime('%Y-%m-%d')} to {stat_second_date_ranges[1].strftime('%Y-%m-%d')}.  \n  (p-threshold: 5%)")
             else:
-                st.markdown("**There is statistically significant difference**  \n  (threshold: 5%)")
+                st.markdown(f"The observations of topic {stat_selected_topic} in an interval from {stat_first_date_ranges[0].strftime('%Y-%m-%d')} to {stat_first_date_ranges[1].strftime('%Y-%m-%d')} **ARE** statistically different from the observations of the interval from {stat_second_date_ranges[0].strftime('%Y-%m-%d')} to {stat_second_date_ranges[1].strftime('%Y-%m-%d')}.  \n  (p-threshold: 5%)")
         with r_col2:
             st.write(f"p-value: {stat_kruskal.pvalue[0]:.5f}")
             st.write(f"H statistic: {stat_kruskal.statistic[0]:.5f}")
+            st.markdown("[Kruskal-Wallis test](https://en.wikipedia.org/wiki/Kruskal%E2%80%93Wallis_one-way_analysis_of_variance)")
 
 st.markdown("Copyright (C) 2023 Francesco Invernici, All Rights Reserved")
