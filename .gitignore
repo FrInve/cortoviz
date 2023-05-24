@@ -2,3 +2,4 @@
 /models
 /topic_search.ipynb
 __pycache__
+*.pyc
