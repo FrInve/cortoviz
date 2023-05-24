@@ -28,32 +28,32 @@ def load_timeline_data():
     covid_timeline.set_index("Date",inplace=True)
     return covid_timeline
 
-@st.cache_data
-def load_topic_data():
-    df_norm = pd.read_csv('./data/processed/topics_freq_pivoted.csv')
-    df_norm['Date'] = pd.to_datetime(df_norm['Date'])
-    df_norm = df_norm.set_index('Date')
-    return df_norm
+# @st.cache_data
+# def load_topic_data():
+#     df_norm = pd.read_csv('./data/processed/topics_freq_pivoted.csv')
+#     df_norm['Date'] = pd.to_datetime(df_norm['Date'])
+#     df_norm = df_norm.set_index('Date')
+#     return df_norm
 
-@st.cache_data
-def load_topic_abs_data():
-    df_abs_freq = pd.read_parquet('./data/processed/topics.parquet')
-    df_abs_freq['Date'] = df_abs_freq.Timestamp.dt.strftime('%Y/%m/%d')
-    df_abs_freq['Date'] = pd.to_datetime(df_abs_freq['Date'])
-    df_abs_freq['Topic'] = df_abs_freq.Topic.astype(str)
-    df_abs_freq = df_abs_freq.loc[df_abs_freq.index.repeat(df_abs_freq.Frequency)]
-    df_abs_freq = df_abs_freq[['Date','Topic']]
-    df_abs_freq = df_abs_freq.set_index('Date')
-    return df_abs_freq
+# @st.cache_data
+# def load_topic_abs_data():
+#     df_abs_freq = pd.read_parquet('./data/processed/topics.parquet')
+#     df_abs_freq['Date'] = df_abs_freq.Timestamp.dt.strftime('%Y/%m/%d')
+#     df_abs_freq['Date'] = pd.to_datetime(df_abs_freq['Date'])
+#     df_abs_freq['Topic'] = df_abs_freq.Topic.astype(str)
+#     df_abs_freq = df_abs_freq.loc[df_abs_freq.index.repeat(df_abs_freq.Frequency)]
+#     df_abs_freq = df_abs_freq[['Date','Topic']]
+#     df_abs_freq = df_abs_freq.set_index('Date')
+#     return df_abs_freq
 
-@st.cache_data
-def load_topic_abs_data_aggr():
-    df_abs_freq = pd.read_parquet('./data/processed/topics.parquet')
-    df_abs_freq['Date'] = df_abs_freq.Timestamp.dt.strftime('%Y/%m/%d')
-    df_abs_freq['Date'] = pd.to_datetime(df_abs_freq['Date'])
-    df_abs_freq['Topic'] = df_abs_freq.Topic.astype(str)
-    df_abs_freq = df_abs_freq[['Topic','Frequency','Date']].pivot(index='Date',columns='Topic',values='Frequency').copy(deep=True)
-    return df_abs_freq
+# @st.cache_data
+# def load_topic_abs_data_aggr():
+#     df_abs_freq = pd.read_parquet('./data/processed/topics.parquet')
+#     df_abs_freq['Date'] = df_abs_freq.Timestamp.dt.strftime('%Y/%m/%d')
+#     df_abs_freq['Date'] = pd.to_datetime(df_abs_freq['Date'])
+#     df_abs_freq['Topic'] = df_abs_freq.Topic.astype(str)
+#     df_abs_freq = df_abs_freq[['Topic','Frequency','Date']].pivot(index='Date',columns='Topic',values='Frequency').copy(deep=True)
+#     return df_abs_freq
 
 @st.cache_resource
 def load_topic_model():
@@ -66,6 +66,8 @@ def create_wordcloud_static(topic):
 
 @st.cache_data
 def load_topic_data_raw():
+    """
+    # Placeholder code
     df_abs_freq = pd.read_parquet('./data/processed/topics.parquet')
     df_abs_freq['Date'] = df_abs_freq.Timestamp.dt.strftime('%Y/%m/%d')
     df_abs_freq['Date'] = pd.to_datetime(df_abs_freq['Date'])
@@ -74,38 +76,82 @@ def load_topic_data_raw():
     df_abs_freq = df_abs_freq[['Date','Topic']]
     df_abs_freq = df_abs_freq.set_index('Date')
     return [df_abs_freq]*4
+    """
+    paths = [
+        './data/processed/cortoviz_data/131_dyn_raw.csv',
+        './data/processed/cortoviz_data/66_dyn_raw.csv',
+        './data/processed/cortoviz_data/44_dyn_raw.csv',
+        './data/processed/cortoviz_data/33_dyn_raw.csv'
+    ]
+    dfs = [pd.read_csv(path) for path in paths]
+    res = []
+    for df in dfs:
+        df['Date'] = pd.to_datetime(df['Date'])
+        df['Topic'] = df.Topic.astype(str)
+        df = df.loc[df.index.repeat(df.Frequency)]
+        df = df[['Date','Topic']]
+        df = df.set_index('Date')
+        res.append(df)
+    return res
+
+
 
 @st.cache_data
 def load_topic_data_pivot():
+    """
+    # Placeholder code
     df_abs_freq = pd.read_parquet('./data/processed/topics.parquet')
     df_abs_freq['Date'] = df_abs_freq.Timestamp.dt.strftime('%Y/%m/%d')
     df_abs_freq['Date'] = pd.to_datetime(df_abs_freq['Date'])
     df_abs_freq['Topic'] = df_abs_freq.Topic.astype(str)
     df_abs_freq = df_abs_freq[['Topic','Frequency','Date']].pivot(index='Date',columns='Topic',values='Frequency').copy(deep=True)
     return [df_abs_freq]*4
+    """
+    paths = [
+        './data/processed/cortoviz_data/131_dyn_pivot.parquet',
+        './data/processed/cortoviz_data/66_dyn_pivot.parquet',
+        './data/processed/cortoviz_data/44_dyn_pivot.parquet',
+        './data/processed/cortoviz_data/33_dyn_pivot.parquet'
+    ]
+    return [pd.read_parquet(path) for path in paths]
 
 @st.cache_data
 def load_topic_data_norm():
+    """
+    # Placeholder code
     df_norm = pd.read_csv('./data/processed/topics_freq_pivoted.csv')
     df_norm['Date'] = pd.to_datetime(df_norm['Date'])
     df_norm = df_norm.set_index('Date')
     return [df_norm]*4
+    """
+    paths = [
+        './data/processed/cortoviz_data/131_dyn_pivot_norm.parquet',
+        './data/processed/cortoviz_data/66_dyn_pivot_norm.parquet',
+        './data/processed/cortoviz_data/44_dyn_pivot_norm.parquet',
+        './data/processed/cortoviz_data/33_dyn_pivot_norm.parquet'
+    ]
+    return [pd.read_parquet(path) for path in paths]
 
-
-df_covid_cases = load_cases_data()
-covid_timeline = load_timeline_data()
-df_norm = load_topic_data()
-df_abs_freq = load_topic_abs_data()
-df_abs_freq_aggr = load_topic_abs_data_aggr()
-topic_model = load_topic_model()
 
 dfs_topic = {
     'raw':load_topic_data_raw(),
     'pivot':load_topic_data_pivot(),
     'norm':load_topic_data_norm(),
     #'bins':[131,66,44,33] # This is the number of bins
-    'bins':[7,14,21,28] # This is the binwidth, or the number of days per bin
+    'bins':[10,18,27,33] # This is the binwidth, or the number of days per bin
+    # TODO: Fix number of bins
 }
+
+df_covid_cases = load_cases_data()
+covid_timeline = load_timeline_data()
+#df_norm = load_topic_data()
+df_norm = dfs_topic['norm'][1]
+#df_abs_freq = load_topic_abs_data()
+df_abs_freq = dfs_topic['raw'][1]
+#df_abs_freq_aggr = load_topic_abs_data_aggr()
+df_abs_freq_aggr = dfs_topic['pivot'][1]
+topic_model = load_topic_model()
+
 
 st.markdown(
     """
@@ -159,7 +205,7 @@ def set_resolution(resolution):
 
 with wcol2:
     st.divider()
-    resolution = st.radio(label="Resolution (No. of weeks):",options=[1,2,3,4],index=1,help="Each point will aggregate data for the selected number of weeks",horizontal=True)
+    resolution = st.radio(label="Resolution (No. of weeks):",options=[1,2,3,4],index=1,help="Each point represents the number of papers on a topic that were published in the selected number of weeks",horizontal=True)
     st.session_state.resolution = resolution
     # Select the dataset with the appropriate resolution at runtime
     df_norm = dfs_topic['norm'][resolution-1]
