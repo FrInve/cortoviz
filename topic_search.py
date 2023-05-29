@@ -6,10 +6,13 @@ import seaborn as sns
 import streamlit as st
 from bertopic import BERTopic
 from scipy.stats import kruskal
+from streamlit.logger import get_logger
 
 import src.topics
 from src.visualization.timeline import *
 from src.visualization.wc import create_wordcloud
+
+logger = get_logger(__name__)
 
 st.set_page_config(layout="wide",
                    page_title="CORToViz",
@@ -168,6 +171,7 @@ with wcol1:
             st.image(create_wordcloud_static(topic))
             chosen_val = st.checkbox(f"Topic ID: {str(topic)}",value=True)
             st.session_state.topics.select_topic(topic, chosen_val)
+            st.write(st.session_state.topics.get_topic_by_rank(i+1))
             
             if i < 3:
                 st.divider()
@@ -207,15 +211,29 @@ with wcol2:
 
 def show_only_cb(selected_topic):
     st.session_state.topics.toggle_solo(selected_topic)
+    logger.debug(f"{st.session_state.topics.get_solo()}")
+
+def update_stat_selected():
+    logger.debug("Stat select topic")
+    logger.debug(f"{st.session_state.topics.get_solo()}")
+    logger.debug(f"selected {st.session_state.stat_selected_topic_sb}")
+    st.session_state.topics.remove_solo()
+    #st.session_state['stat_show_only_cb'] = False
+    if st.session_state.stat_show_only_cb:
+        st.session_state.topics.toggle_solo(st.session_state.stat_selected_topic_sb)
+    logger.debug(f"{st.session_state.topics.get_solo()}")
 
 with st.expander("Test your hypotheses", expanded=True):
     expander_col1, expander_col2 = st.columns(2, gap="large")
     with expander_col1:
         stat_selected_topic = st.selectbox(
             "Select one topic to verify if it changes through time (Kruskal-Wallis Test):",
-            similar_topic
+            similar_topic,
+            key="stat_selected_topic_sb",
+            on_change=update_stat_selected
         )
-        st.checkbox("Show only this topic", value=False, on_change=show_only_cb, kwargs={'selected_topic':stat_selected_topic})
+        stat_show_only = st.checkbox("Show only this topic", key="stat_show_only_cb", value=False, on_change=show_only_cb, kwargs={'selected_topic':stat_selected_topic})
+        st.write(st.session_state.topics.get_solo())
 
     with expander_col2:
         stat_first_date_ranges = st.slider(
