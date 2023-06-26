@@ -8,7 +8,7 @@ import seaborn as sns
 def plot_events(events):
     for year, desc in events.items():
         plt.axvline(x=year, linestyle='--', color='r',alpha=0.3)
-        plt.text(year, 1000, desc, rotation=90, color='r', alpha=0.3)
+        plt.text(year, 1000, desc, rotation=90, color='r', alpha=0.75)
     #plt.show()
 
 def get_covid_data(start_date='2019-12-01', end_date='2022-12-30'):

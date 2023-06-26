@@ -7,7 +7,7 @@ from wordcloud import WordCloud
 
 def create_wordcloud(topic_model, topic):
     text = {word: value for word, value in topic_model.get_topic(topic)}
-    wc = WordCloud(background_color="black", max_words=1000)
+    wc = WordCloud(background_color="black", max_words=50)
     wc.generate_from_frequencies(text)
     plt.imshow(wc, interpolation="bilinear")
     plt.axis("off")
