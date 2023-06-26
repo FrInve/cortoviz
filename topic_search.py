@@ -211,6 +211,16 @@ with wcol2:
     plot_covid_cases(covid_df=df_covid_cases, ax=ax2)
     fig.subplots_adjust(hspace=0)
     st.pyplot(fig)
+    fn = f"topic_{'_'.join(st.session_state.topics.get_selected_topics())}.svg"
+    img = io.BytesIO()
+    plt.savefig(img, format='svg')
+ 
+    download_btn = st.download_button(
+    label="Download",
+    data=img,
+    file_name=fn,
+    mime="image/svg+xml"
+    )
 
 def show_only_cb(selected_topic):
     st.session_state.topics.toggle_solo(selected_topic)
