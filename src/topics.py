@@ -38,9 +38,16 @@ class Topics:
         if self.any_solo():
             return self.get_solo()
         return [t.topic_id for t in self.similar_topics.values() if t.selected]
+    
 
     def select_topic(self, topic_id, choice):
         self.similar_topics[str(topic_id)].select(choice)
+
+    #def convert_rank_to_id(self, rank):
+    #    return [t.topic_id for t in self.similar_topics if t.rank == rank][0]
+    
+    def map_ids_to_rank(self):
+        return {id:str(self.similar_topics[id].rank) for id in self.get_selected_topics()}
     
     def get_topic_by_rank(self,rank):
         return [t for t in self.similar_topics.values() if t.rank == rank][0]
@@ -63,6 +70,7 @@ class Topic:
         self.topic_id = str(topic)
         self.selected = True
         self.solo = False
+        self.rank = -1
     
     def __str__(self):
         return self.topic_id

@@ -1,3 +1,4 @@
+import io
 from datetime import datetime, timedelta
 
 import matplotlib.pyplot as plt
@@ -171,7 +172,7 @@ with wcol1:
             st.image(create_wordcloud_static(topic))
             chosen_val = st.checkbox(f"Topic ID: {str(topic)}",value=True)
             st.session_state.topics.select_topic(topic, chosen_val)
-            st.write(st.session_state.topics.get_topic_by_rank(i+1))
+            #st.write(st.session_state.topics.get_topic_by_rank(i+1))
             
             if i < 3:
                 st.divider()
@@ -192,11 +193,13 @@ with wcol2:
     df_abs_freq_aggr = dfs_topic['pivot'][resolution-1]
     bins = dfs_topic['bins'][resolution-1]
 
-    df_tmp = df_norm[df_norm.index < '2022-06-06'][st.session_state.topics.get_selected_topics()].copy()
-    df_abs_tmp = df_abs_freq[(df_abs_freq.Topic.isin(st.session_state.topics.get_selected_topics())) & (df_abs_freq.index < '2022-06-06')].copy()
+    df_tmp = df_norm[df_norm.index < '2022-06-06'][st.session_state.topics.get_selected_topics()].copy()#.rename(columns=st.session_state.topics.map_ids_to_rank()).copy()
+    #logger.debug(f"{st.session_state.topics.map_ids_to_rank()}")
+    df_abs_tmp = df_abs_freq[(df_abs_freq.Topic.isin(st.session_state.topics.get_selected_topics())) & (df_abs_freq.index < '2022-06-06')].copy()#.replace({'Topic':st.session_state.topics.map_ids_to_rank()}).copy()
     # Set same colour palette among different plots
     palette_colors = sns.color_palette('tab10')
     palette_dict = {topic:color for topic,color in zip((str(x) for x in similar_topic),palette_colors)}
+    #palette_dict = {topic:color for topic,color in zip((str(x) for x in range(1,7)),palette_colors)}
     fig, (ax1, ax1_bis) = plt.subplots(2,height_ratios=[0.87,0.13],figsize=(11.7,8.27),sharex=True)
     #sns.set_theme()
     sns.lineplot(data=df_tmp, dashes=False, palette=palette_dict, ax=ax1).set(title=query, ylabel="Relative Frequency (%)")
@@ -233,7 +236,7 @@ with st.expander("Test your hypotheses", expanded=True):
             on_change=update_stat_selected
         )
         stat_show_only = st.checkbox("Show only this topic", key="stat_show_only_cb", value=False, on_change=show_only_cb, kwargs={'selected_topic':stat_selected_topic})
-        st.write(st.session_state.topics.get_solo())
+        #st.write(st.session_state.topics.get_solo()) ### DEBUG
 
     with expander_col2:
         stat_first_date_ranges = st.slider(
