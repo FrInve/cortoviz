@@ -6,6 +6,7 @@ import pandas as pd
 import seaborn as sns
 import streamlit as st
 from bertopic import BERTopic
+from PIL import Image
 from scipy.stats import kruskal
 from streamlit.logger import get_logger
 
@@ -147,11 +148,9 @@ st.markdown(
 )
 st.title("CORToViz - The CORD-19 Topics Visualizer")
 #st.header("The CORD-19 Topics Visualizer")
-with st.expander("⭐️ Quick start! ⭐️"):
+with st.expander("⭐️ - Welcome to the CORD-19 Topic Visualizer - ⭐️ - Click for more information"):
     st.markdown("""
-    Welcome to the CORD-19 Topics Visualizer!
-
-    The COVID-19 Open Research Dataset (CORD-19) collects more than one million papers and preprints published during the pandemic on SARS-CoV-2 and COVID-19.
+    The COVID-19 Open Research Dataset (CORD-19) collects more than one million papers and preprints on SARS-CoV-2 and COVID-19 published during the pandemic.
 
     In this tool you can explore the topics of a selected subset (300K abstracts) of this corpus of scientific literature and see the evolution of their intensity.
 
@@ -159,16 +158,17 @@ with st.expander("⭐️ Quick start! ⭐️"):
 
     If you want to check if the evolution of a single topic is statistically significant or not, a test is available at the bottom of the plot. You can select the topic that you want to test with the buttons at the bottom left of the page. You can even choose to view only a single topic by checking the checkbox!
     """)
+query = st.text_input("Search a topic:", value='variant', max_chars=100)
 
 wcol1, wcol2 = st.columns([0.35,0.65])
 
 with wcol1:
-    query = st.text_input("Search a topic:", value='variant', max_chars=100)
 
     similar_topic, similarity = topic_model.find_topics(query, top_n=6)
 
-    st.subheader("Inspect Topics' WordClouds:")
+    st.subheader("Topics' Word Clouds")
 
+    st.divider()
     col1, col2 = st.columns(2)
     columns = [col1,col2]
 
@@ -181,9 +181,9 @@ with wcol1:
     for i, topic in enumerate(similar_topic):
         with columns[i%2]:
             #st.write(f"No. {i+1} - Similarity: {similarity[i]:.2f}")# - {topic_model.get_topic(topic)[0][0]}")
-            st.caption(f"Similarity: {similarity[i]*100:.0f}%")# - {topic_model.get_topic(topic)[0][0]}")
+            #st.caption(f"Similarity: {similarity[i]*100:.0f}%")# - {topic_model.get_topic(topic)[0][0]}")
             st.image(create_wordcloud_static(topic))
-            chosen_val = st.checkbox(f"Topic ID: {str(topic)}",value=True)
+            chosen_val = st.checkbox(f"Topic ID: {str(topic)} - Similarity: {similarity[i]*100:.0f}%",value=True)
             st.session_state.topics.select_topic(topic, chosen_val)
             #st.write(st.session_state.topics.get_topic_by_rank(i+1))
             
@@ -198,6 +198,7 @@ def set_resolution(resolution):
     st.session_state['resolution'] = resolution
 
 with wcol2:
+    st.subheader("Topic Temporal Trends")
 
     top_rcol1, top_rcol2 = st.columns([0.89,0.11])
     with top_rcol1: 
@@ -263,7 +264,8 @@ def update_stat_selected():
 #with expander_col1:
 with wcol1:
     st.divider()
-    st.write("Select one topic to verify if it changes through time ([Kruskal-Wallis test](https://en.wikipedia.org/wiki/Kruskal%E2%80%93Wallis_one-way_analysis_of_variance))")
+    st.subheader("Verify your hypothesis")
+    st.write("Select one topic to verify if it changes through time ([Kruskal-Wallis test](https://doi.org/10.1080/01621459.1952.10483441))")
     stat_selected_topic = st.radio(
         "Select one topic to verify if it changes through time (Kruskal-Wallis Test):",
         similar_topic,
@@ -272,7 +274,7 @@ with wcol1:
         label_visibility="collapsed",
         horizontal=True
     )
-    stat_show_only = st.checkbox("Show only THIS topic", key="stat_show_only_cb", value=False, on_change=show_only_cb, kwargs={'selected_topic':stat_selected_topic})
+    stat_show_only = st.checkbox("Plot only selected topic", key="stat_show_only_cb", value=False, on_change=show_only_cb, kwargs={'selected_topic':stat_selected_topic})
     #st.write(st.session_state.topics.get_solo()) ### DEBUG
 
 #with expander_col2:
@@ -320,4 +322,4 @@ with wcol2:
         st.write(f"p-value: {stat_kruskal.pvalue[0]:.5f}")
         st.write(f"H statistic: {stat_kruskal.statistic[0]:.5f}")
 
-st.markdown("Copyright (C) 2023 Francesco Invernici, All Rights Reserved")
+st.caption("Copyright (C) 2023 Francesco Invernici, Anna Bernasconi, Stefano Ceri All Rights Reserved")
