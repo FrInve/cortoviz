@@ -9,4 +9,3 @@ services:
     container_name: topic_app
     ports:
       - 8170:8501
-    restart: unless-stopped

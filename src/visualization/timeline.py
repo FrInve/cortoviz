@@ -8,12 +8,17 @@ import seaborn as sns
 def plot_events(events):
     for year, desc in events.items():
         plt.axvline(x=year, linestyle='--', color='r',alpha=0.3)
-        plt.text(year, 1000, desc, rotation=90, color='r', alpha=0.75)
+        plt.text(year, 1000, desc, rotation=90, color='r', alpha=0.65)
     #plt.show()
 
 def get_covid_data(start_date='2019-12-01', end_date='2022-12-30'):
-    url = "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/cases_deaths/biweekly_cases.csv"
-    df = pd.read_csv(url)
+    # url = "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/cases_deaths/biweekly_cases.csv"
+    #url = "https://github.com/owid/covid-19-data/raw/bde469eddb25cba1d8afb180928156683cc85210/public/data/cases_deaths/biweekly_cases.csv"
+    #url = "https://github.com/owid/covid-19-data/raw/1221c434483670b190df363456ea30377cb20f0c/public/data/cases_deaths/biweekly_cases.csv"
+    # This is the only one correct 00a794d4aa23c75c3012069ba8c354cd4aa186d8
+    #url = "https://github.com/owid/covid-19-data/raw/00a794d4aa23c75c3012069ba8c354cd4aa186d8/public/data/cases_deaths/biweekly_cases.csv"
+    df = pd.read_csv("./data/raw/biweekly_cases.csv")
+    # df = pd.read_csv(url)
 
     df['Global COVID-19 Cases'] = df['World']
     df = df[['date','Global COVID-19 Cases']]
